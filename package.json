@@ -1,0 +1,16 @@
+﻿{
+  "name": "lantech-cli",
+  "version": "1.0.0",
+  "description": "LanTech Blog CLI - AI agent 管理博客内容的命令行工具",
+  "bin": {
+    "lantech-cli": "./bin/cli.js"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "axios": "^1.7.0",
+    "form-data": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
