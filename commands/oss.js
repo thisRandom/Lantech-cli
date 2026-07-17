@@ -17,9 +17,10 @@ async function uploadFile(filePath, fileType, description) {
   const signRes = await api.get('/api/admin/oss/signature', { type: fileType });
   const sign = signRes.data || signRes;
 
-  const fileName = path.basename(filePath);
+  const ext = path.extname(filePath);
   const timestamp = Date.now();
-  const objectKey = sign.dir + timestamp + '_' + fileName;
+  const randomId = Math.floor(Math.random() * 900) + 100;
+  const objectKey = sign.dir + timestamp + '-' + randomId + ext;
   const objectUrl = '/' + objectKey;
   const fileContent = fs.readFileSync(filePath);
 
@@ -29,7 +30,7 @@ async function uploadFile(filePath, fileType, description) {
   form.append('OSSAccessKeyId', sign.accessid);
   form.append('policy', sign.policy);
   form.append('signature', sign.signature);
-  form.append('file', fileContent, { filename: fileName });
+  form.append('file', fileContent, { filename: 'upload' + ext });
 
   const axios = require('axios');
   const uploadRes = await axios.post(sign.host, form, {
@@ -46,27 +47,26 @@ async function uploadFile(filePath, fileType, description) {
   const baseUrl = sign.host;
   await api.post('/api/admin/oss/register', {
     url: objectUrl,
-    fileName: fileName,
+    fileName: objectKey.replace(sign.dir, ''),
     fileSize: stats.size,
-    mimeType: getMimeType(fileName),
+    mimeType: getMimeType(ext),
     description: description || 'CLI 上传',
   });
 
   return {
     url: objectUrl,
     fullUrl: baseUrl + objectUrl,
-    fileName: fileName,
+    fileName: objectKey.replace(sign.dir, ''),
     fileSize: stats.size,
   };
 }
 
-function getMimeType(fileName) {
-  const ext = path.extname(fileName).toLowerCase();
+function getMimeType(ext) {
   const map = {
     '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
     '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.bmp': 'image/bmp',
   };
-  return map[ext] || 'application/octet-stream';
+  return map[ext.toLowerCase()] || 'application/octet-stream';
 }
 
 function register(program) {
