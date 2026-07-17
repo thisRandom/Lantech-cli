@@ -123,7 +123,7 @@ tag list | tag create --name "新标签" | tag update --id 1 --name "新名称"
 ### OSS 图片上传
 
 ```
-oss upload --file "本地路径" --type cover|article|default
+oss upload --file "本地路径" --type cover --desc "封面描述"
 ```
 
 上传成功返回 URL，用于封面或正文插图。
