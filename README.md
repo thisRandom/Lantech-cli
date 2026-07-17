@@ -81,12 +81,12 @@ lantech-cli article create \
   --title "文章标题" \
   --content "## 正文" \
   --category 1 \
-  --tags "Vue,Java,前端" \
+  --tag-ids "11,18" \
   --status 0                     # 0=草稿（默认） 1=发布
 
 # 更新（只传需要改的字段）
 lantech-cli article update 123 --title "新标题"
-lantech-cli article update 123 --content "新内容" --tags "标签1,标签2"
+lantech-cli article update 123 --content "新内容" --tag-ids "26,11"
 
 # 发布/下架
 lantech-cli article publish 123

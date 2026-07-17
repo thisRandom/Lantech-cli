@@ -20,7 +20,7 @@
 1. **文章标题** — 明确告知用户
 2. **正文内容** — AI 起草大纲，用户确认方向
 3. **分类** — 从 `category list` 中选择（分类固定，不新增）
-4. **标签** — 先 `tag list` 查看已有标签，优先使用已有的。如需新建，**询问用户**是否创建
+4. **标签** — 先 `tag list` 查看已有标签及其 ID。优先使用已有的。如需新建，**询问用户**是否创建
 5. **是否需要封面图** — 默认需要
 6. **是否需要正文插图** — 默认需要
 
@@ -69,14 +69,14 @@ AI 提供封面图提示词 → 用户生成并下载 → AI 上传到 OSS → �
 
 ### 第五步：创建文章
 
-所有参数齐全后执行：
+所有参数齐全后执行。标签使用 ID 数组（通过 `tag list` 获取 ID）：
 
 ```
 lantech-cli article create \
   --title "文章标题" \
   --content "含图片的完整 Markdown" \
   --category <id> \
-  --tags "标签1,标签2" \
+  --tag-ids "26,11" \
   --cover "封面URL" \
   --status 0
 ```
@@ -105,8 +105,8 @@ lantech-cli article list --keyword "标题关键字"
 ```
 article list [--page N] [--size N] [--keyword "标题"] [--status 0|1]
 article get <id>
-article create --title "标题" --content "正文" --category <id> [--tags "a,b"] [--cover "URL"] [--status 0]
-article update <id> [--title "新标题"] [--content "新内容"] [--tags "a,b"] [--cover "URL"]
+article create --title "标题" --content "正文" --category <id> [--tag-ids "1,2"] [--cover "URL"] [--status 0]
+article update <id> [--title "新标题"] [--content "新内容"] [--tag-ids "1,2"] [--cover "URL"]
 article publish <id> / unpublish <id>
 article delete <id> / restore <id> / recycle
 ```
@@ -118,7 +118,7 @@ category list
 tag list | tag create --name "新标签" | tag update --id 1 --name "新名称"
 ```
 
-创建文章时 `--tags` 传不存在的名字会自动创建。但**应先询问用户**是否要新建。
+使用 `tag list` 查看标签 ID，创建文章时用 `--tag-ids "26,11"` 传入 ID。
 
 ### OSS 图片上传
 

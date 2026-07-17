@@ -34,7 +34,7 @@ function register(program) {
     .requiredOption('--title <title>', '文章标题（必填）')
     .requiredOption('--content <content>', 'Markdown 正文（必填）')
     .requiredOption('--category <id>', '分类 ID（必填）')
-    .option('--tags <tags>', '标签名，逗号分隔')
+    .option('--tag-ids <ids>', '标签 ID，逗号分隔（通过 tag list 获取 ID）')
     .option('--status <status>', '0=草稿 1=发布（默认 0）', '0')
     .option('--cover <url>', '封面图 URL')
     .action(async (options) => {
@@ -42,31 +42,37 @@ function register(program) {
         title: options.title,
         content: options.content,
         categoryId: parseInt(options.category),
-        tags: options.tags ? options.tags.split(',').map(t => t.trim()).filter(Boolean) : undefined,
         status: parseInt(options.status),
       };
+      if (options.tagIds) data.tagIds = options.tagIds.split(',').map(t => parseInt(t.trim())).filter(n => !isNaN(n));
       if (options.cover) data.cover = options.cover;
       const res = await api.post('/api/admin/article/save', data);
       output.successWithMessage(res.data || res, '文章已创建（草稿状态）');
     });
 
   cmd.command('update')
-    .description('更新文章')
+    .description('更新文章（只传需要改的字段，其余自动保留）')
     .argument('<id>', '文章 ID')
     .option('--title <title>', '新标题')
     .option('--content <content>', '新正文')
     .option('--category <id>', '分类 ID')
-    .option('--tags <tags>', '标签名，逗号分隔')
+    .option('--tag-ids <ids>', '标签 ID，逗号分隔（通过 tag list 获取 ID）')
     .option('--status <status>', '0=草稿 1=发布')
     .option('--cover <url>', '封面图 URL')
     .action(async (id, options) => {
-      const data = { id: parseInt(id) };
-      if (options.title) data.title = options.title;
-      if (options.content) data.content = options.content;
-      if (options.category) data.categoryId = parseInt(options.category);
-      if (options.tags) data.tags = options.tags.split(',').map(t => t.trim()).filter(Boolean);
-      if (options.status !== undefined) data.status = parseInt(options.status);
+      // 先获取当前文章，合并后再提交（后端需要完整字段）
+      const res = await api.get(`/api/admin/article/${id}`);
+      const cur = res.data || res;
+      const data = {
+        id: parseInt(id),
+        title: options.title || cur.title,
+        content: options.content || cur.content,
+        categoryId: options.category ? parseInt(options.category) : cur.categoryId,
+        status: options.status !== undefined ? parseInt(options.status) : cur.status,
+      };
       if (options.cover) data.cover = options.cover;
+      else if (cur.cover) data.cover = cur.cover;
+      if (options.tagIds) data.tagIds = options.tagIds.split(',').map(t => parseInt(t.trim())).filter(n => !isNaN(n));
       await api.post('/api/admin/article/save', data);
       output.successWithMessage(null, '文章已更新');
     });
