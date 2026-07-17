@@ -17,71 +17,47 @@
 
 与用户确认以下内容：
 
-1. **文章标题** — 明确告知用户
-2. **正文内容** — AI 起草大纲，用户确认方向
-3. **分类** — 从 `category list` 中选择（分类固定，不新增）
-4. **标签** — 先 `tag list` 查看已有标签及其 ID。优先使用已有的。如需新建，**询问用户**是否创建
+1. **文章标题**
+2. **正文方向** — AI 起草大纲，用户确认
+3. **分类** — `category list`（固定，不新增）
+4. **标签** — 先 `tag list` 查已有的。需新建则**询问用户**
 5. **是否需要封面图** — 默认需要
 6. **是否需要正文插图** — 默认需要
 
 ### 第二步：准备封面图
 
-AI 提供封面图提示词 → 用户生成并下载 → AI 上传到 OSS → 拿到 URL
+AI 提供提示词 → 用户生成并下载 → AI 上传到 OSS
 
-1. AI 根据文章主题撰写封面图提示词（描述画面风格、色调、内容）
-2. 用户用提示词在 ChatGPT/其他工具生成图片，下载到本地，告知 AI 文件路径
-3. AI 上传：
-   ```
-   lantech-cli oss upload --file "用户提供的路径" --type cover
-   ```
-4. 保存返回的 URL
+```
+lantech-cli oss upload --file "用户路径" --type cover --desc "封面描述"
+```
 
-> 用户说"不要封面" → 跳过
+保存返回的 URL。
 
 ### 第三步：准备正文插图
 
-写正文之前，先确定配图并全部上传好：
+AI 描述配图 → 用户生成并下载 → AI 全部上传 → 拿到所有 URL
 
-1. AI 根据内容列出需要配图的位置及画面描述
-2. 用户逐一生成并下载，告知 AI 路径
-3. AI 逐个上传：
-   ```
-   lantech-cli oss upload --file "路径1" --type article
-   lantech-cli oss upload --file "路径2" --type article
-   ```
-4. 拿到所有 URL，撰写正文时直接嵌入
-
-> 用户说"不配图" → 跳过，正文中不留 TODO
+```
+lantech-cli oss upload --file "路径" --type article --desc "图片描述"
+```
 
 ### 第四步：撰写正文
 
-将上一步上传的图片 URL 直接嵌入 Markdown：
-
-```markdown
-## 章节标题
-
-文字描述...
-
-![图片描述](https://oss.lantech.top/blog/articles/xxx.jpg)
-```
-
-正文已包含真实图片，**无需 TODO 标记**。
-
-### 第五步：创建文章
-
-所有参数齐全后执行。标签使用 ID 数组（通过 `tag list` 获取 ID）：
+图片 URL 直接嵌入 Markdown。长正文建议写入文件后用 `--content-file`：
 
 ```
 lantech-cli article create \
-  --title "文章标题" \
-  --content "含图片的完整 Markdown" \
+  --title "标题" \
+  --content-file /tmp/article.md \
+  --summary "一句话摘要" \
   --category <id> \
   --tag-ids "26,11" \
   --cover "封面URL" \
   --status 0
 ```
 
-获取文章 ID：
+### 第五步：获取 ID
 
 ```
 lantech-cli article list --keyword "标题关键字"
@@ -89,12 +65,9 @@ lantech-cli article list --keyword "标题关键字"
 
 ### 第六步：发布
 
-- 正文中**无 TODO 标记** + 有封面 → 询问用户："内容已就绪，是否发布？" 确认后：
-  ```
-  lantech-cli article publish <id>
-  ```
-- 正文中**有 TODO 标记** → **禁止发布**，告知用户还有哪些未完成，由用户手动发布
-- **封面为空** → **禁止发布**
+- 无 TODO + 有封面 → 问用户 → 确认后发布
+- 有 TODO → 禁止发布，用户手动发
+- 无封面 → 禁止发布
 
 ---
 
@@ -105,28 +78,33 @@ lantech-cli article list --keyword "标题关键字"
 ```
 article list [--page N] [--size N] [--keyword "标题"] [--status 0|1]
 article get <id>
-article create --title "标题" --content "正文" --category <id> [--tag-ids "1,2"] [--cover "URL"] [--status 0]
-article update <id> [--title "新标题"] [--content "新内容"] [--tag-ids "1,2"] [--cover "URL"]
+article create --title "标题" --content "正文" --category <id>
+               [--content-file <path>] [--summary "摘要"]
+               [--tag-ids "1,2"] [--cover "URL"] [--status 0]
+article update <id> [--title "新标题"] [--content "新正文"]
+               [--content-file <path>] [--summary "新摘要"]
+               [--tag-ids "1,2"] [--cover "URL"] [--status 0|1]
 article publish <id> / unpublish <id>
 article delete <id> / restore <id> / recycle
 ```
+
+> `update` 只传需要改的字段即可，其余自动保留。
+> 长正文建议用 `--content-file` 从文件读取，避免 shell 转义问题。
 
 ### 分类 / 标签
 
 ```
 category list
-tag list | tag create --name "新标签" | tag update --id 1 --name "新名称"
+tag list | tag create --name "新标签"
 ```
 
-使用 `tag list` 查看标签 ID，创建文章时用 `--tag-ids "26,11"` 传入 ID。
+`tag list` 查看标签 ID，`--tag-ids` 传 ID 数组。
 
 ### OSS 图片上传
 
 ```
-oss upload --file "本地路径" --type cover --desc "封面描述"
+oss upload --file "本地路径" --type cover|article|default [--desc "描述"]
 ```
-
-上传成功返回 URL，用于封面或正文插图。
 
 ### 统计与状态
 
@@ -138,8 +116,4 @@ stats show | cert status | system status
 
 ## 禁止操作
 
-以下操作 AI **不得执行**：
-- 删除文章（除非用户明确要求）
-- 修改系统配置
-- 管理用户和角色
-- 管理 AI 密钥
+以下操作 AI 不得执行：删除文章（除非用户明确要求）、修改系统配置、管理用户和角色、管理 AI 密钥。

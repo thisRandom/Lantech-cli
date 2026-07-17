@@ -1,5 +1,6 @@
 const api = require('../lib/api');
 const output = require('../lib/output');
+const fs = require('fs');
 
 function register(program) {
   const cmd = program.command('article')
@@ -30,20 +31,23 @@ function register(program) {
     });
 
   cmd.command('create')
-    .description('创建文章（存为草稿，需用户审核后发布）')
-    .requiredOption('--title <title>', '文章标题（必填）')
-    .requiredOption('--content <content>', 'Markdown 正文（必填）')
-    .requiredOption('--category <id>', '分类 ID（必填）')
-    .option('--tag-ids <ids>', '标签 ID，逗号分隔（通过 tag list 获取 ID）')
+    .description('创建文章（存为草稿）')
+    .requiredOption('--title <title>', '文章标题')
+    .requiredOption('--content <content>', 'Markdown 正文（或用 --content-file 从文件读）')
+    .requiredOption('--category <id>', '分类 ID')
+    .option('--content-file <path>', '从文件读取正文（覆盖 --content）')
+    .option('--summary <summary>', '文章摘要')
+    .option('--tag-ids <ids>', '标签 ID，逗号分隔')
     .option('--status <status>', '0=草稿 1=发布（默认 0）', '0')
     .option('--cover <url>', '封面图 URL')
     .action(async (options) => {
+      let content = options.content;
+      if (options.contentFile) content = fs.readFileSync(options.contentFile, 'utf-8').trim();
       const data = {
-        title: options.title,
-        content: options.content,
-        categoryId: parseInt(options.category),
-        status: parseInt(options.status),
+        title: options.title, content: content,
+        categoryId: parseInt(options.category), status: parseInt(options.status),
       };
+      if (options.summary) data.summary = options.summary;
       if (options.tagIds) data.tagIds = options.tagIds.split(',').map(t => parseInt(t.trim())).filter(n => !isNaN(n));
       if (options.cover) data.cover = options.cover;
       const res = await api.post('/api/admin/article/save', data);
@@ -54,22 +58,25 @@ function register(program) {
     .description('更新文章（只传需要改的字段，其余自动保留）')
     .argument('<id>', '文章 ID')
     .option('--title <title>', '新标题')
-    .option('--content <content>', '新正文')
+    .option('--content <content>', '新正文（或用 --content-file 从文件读）')
+    .option('--content-file <path>', '从文件读取正文（覆盖 --content）')
+    .option('--summary <summary>', '新摘要')
     .option('--category <id>', '分类 ID')
-    .option('--tag-ids <ids>', '标签 ID，逗号分隔（通过 tag list 获取 ID）')
+    .option('--tag-ids <ids>', '标签 ID，逗号分隔')
     .option('--status <status>', '0=草稿 1=发布')
     .option('--cover <url>', '封面图 URL')
     .action(async (id, options) => {
-      // 先获取当前文章，合并后再提交（后端需要完整字段）
       const res = await api.get(`/api/admin/article/${id}`);
       const cur = res.data || res;
+      let content = options.content || cur.content;
+      if (options.contentFile) content = fs.readFileSync(options.contentFile, 'utf-8').trim();
       const data = {
-        id: parseInt(id),
-        title: options.title || cur.title,
-        content: options.content || cur.content,
+        id: parseInt(id), title: options.title || cur.title, content: content,
         categoryId: options.category ? parseInt(options.category) : cur.categoryId,
         status: options.status !== undefined ? parseInt(options.status) : cur.status,
       };
+      if (options.summary) data.summary = options.summary;
+      else if (cur.summary) data.summary = cur.summary;
       if (options.cover) data.cover = options.cover;
       else if (cur.cover) data.cover = cur.cover;
       if (options.tagIds) data.tagIds = options.tagIds.split(',').map(t => parseInt(t.trim())).filter(n => !isNaN(n));
