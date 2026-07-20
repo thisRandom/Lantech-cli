@@ -5,7 +5,7 @@
 ## 安装 CLI
 
 ```
-curl -s https://cli.lantech.top/lantech-cli-1.0.0.tgz | tar xz
+curl -s https://cli.lantech.top/lantech-cli.tgz | tar xz
 cd package && npm install -g . && cd ..
 ```
 

@@ -9,7 +9,7 @@ LanTech 博客 CLI 工具。让 AI agent 通过命令行管理博客内容，无
 ```bash
 # 下载并全局安装
 curl -s -H "Referer: https://lantech.top" \
-  https://cli.lantech.top/lantech-cli-1.0.0.tgz \
+  https://cli.lantech.top/lantech-cli.tgz \
   | tar xz && cd package && npm install -g . && cd ..
 ```
 
@@ -138,10 +138,13 @@ lantech-cli project list
 lantech-cli project create --title "项目标题" \
   --description "项目描述" \
   --url "https://github.com/xxx" \
-  --tags "Java,Vue"
+  --date "2026-07-20" \
+  --tags "Java,Vue" \
+  --images "https://oss.lantech.top/blog/projects/xxx.png"
 
-# 编辑
+# 编辑（未传字段自动保留原值）
 lantech-cli project update --id 1 --title "新标题"
+lantech-cli project update --id 1 --images "https://oss.lantech.top/blog/projects/a.png,https://oss.lantech.top/blog/projects/b.png"
 
 # 删除
 lantech-cli project delete 1
@@ -166,7 +169,10 @@ lantech-cli oss upload --file "D:\图片\photo.jpg" --type article
 #   default  - 其他杂项（blog/misc/）
 ```
 
-上传成功后返回 OSS URL，可直接用于文章的 `cover` 字段或正文中。
+上传成功后返回三个 URL：
+- `url` —— OSS 相对路径（如 `/blog/projects/xxx.png`）
+- `fullUrl` —— Aliyun OSS 直链（`https://<bucket>.<endpoint>/...`）
+- `cdnUrl` —— 博客前台使用的 CDN 域名地址（`https://oss.lantech.top/...`），可直接喂给 `project --images` / `article --cover`
 
 ### 统计与状态
 
@@ -192,7 +198,7 @@ lantech-cli system status
 
 ```bash
 curl -s -H "Referer: https://lantech.top" \
-  https://cli.lantech.top/lantech-cli-1.0.0.tgz \
+  https://cli.lantech.top/lantech-cli.tgz \
   | tar xz && cd package && npm install -g . && cd ..
 ```
 
@@ -251,10 +257,14 @@ lantech-cli article publish <id>
 ## 更新
 
 ```bash
-# 重新下载最新版本安装
-curl -s -H "Referer: https://lantech.top" \
-  https://cli.lantech.top/lantech-cli-1.0.0.tgz \
-  | tar xz && cd package && npm install -g . && cd ..
+# 一键更新到最新版本
+lantech-cli update
+```
+
+也可以手动重装（等价于上面命令）：
+
+```bash
+npm install -g https://cli.lantech.top/lantech-cli.tgz
 ```
 
 ## 卸载

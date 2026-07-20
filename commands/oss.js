@@ -53,9 +53,22 @@ async function uploadFile(filePath, fileType, description) {
     description: description || 'CLI 上传',
   });
 
+  // 博客前台使用的是自定义 CDN 域名（oss.base_url），非 Aliyun 直链
+  // 拿到后可直接用于 project --images / article --cover
+  let cdnUrl = null;
+  try {
+    const cfgRes = await api.get('/api/admin/config/system');
+    const cfg = cfgRes.data || cfgRes;
+    const cdnBase = cfg && cfg['oss.base_url'];
+    if (cdnBase) cdnUrl = cdnBase.replace(/\/+$/, '') + objectUrl;
+  } catch (e) {
+    // 读不到配置就算了，url 和 fullUrl 仍可用
+  }
+
   return {
     url: objectUrl,
     fullUrl: baseUrl + objectUrl,
+    cdnUrl: cdnUrl,
     fileName: objectKey.replace(sign.dir, ''),
     fileSize: stats.size,
   };

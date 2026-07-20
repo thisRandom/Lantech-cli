@@ -4,7 +4,7 @@ const { program } = require('commander');
 program
   .name('lantech-cli')
   .description('LanTech Blog CLI - 管理博客内容的命令行工具')
-  .version('1.0.0');
+  .version('1.0.1');
 
 require('../commands/config').register(program);
 require('../commands/permissions').register(program);
