@@ -7,8 +7,10 @@
   - 版本来源唯一：`package.json`。`bin/cli.js` 的 `-V` 读的是 `pkg.version`，改版本号只改 `package.json` 即可，不要再硬编码。
 - 打包产物文件名固定为 `lantech-cli.tgz`（不带版本号），对应下载地址 `https://cli.lantech.top/lantech-cli.tgz`。
   `npm pack` 会生成带版本号的文件（如 `lantech-cli-1.0.3.tgz`），打完后 `mv -f` 覆盖成 `lantech-cli.tgz`。
-- 完整流程：bump `package.json` 版本 → `npm pack` → 重命名为 `lantech-cli.tgz` → 冒烟测试（`node bin/cli.js -V` 应显示新版本）→ commit → push。
-- 打完包后提醒我：① 把 `lantech-cli.tgz` 上传到 `cli.lantech.top`；② 把版本接口 `/api/version/check?platform=cli` 的 `data.version` 同步成新版本号，`data.log` 填更新日志。
+- 完整流程：bump `package.json` 版本 → `npm pack` → 重命名为 `lantech-cli.tgz` → 冒烟测试（`node bin/cli.js -V` 应显示新版本）→ commit → push → 运行 `python deploy_oss.py` 上传到 OSS。
+- **每次打包后必须给我一份更新日志**（对比线上上一版，列出本次变更），格式为可直接填进版本接口 `data.log` 的多行文本（换行用 `\n`，CLI 端会按行缩进展示）。
+- **打包后自动执行 `python deploy_oss.py`**，把 `lantech-cli.tgz` 上传到 `lantech-cli` bucket 根目录（覆盖旧包、no-cache）。密钥从环境变量 `ALIYUN_ACCESS_KEY_ID` / `ALIYUN_ACCESS_KEY_SECRET` 读取，首次运行需设好环境变量。
+- 上传完仍需提醒我：把版本接口 `/api/version/check?platform=cli` 的 `data.version` 同步成新版本号、`data.log` 填更新日志。
 
 ## 定位
 
