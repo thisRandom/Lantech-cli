@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 const { program } = require('commander');
+const pkg = require('../package.json');
 
 program
   .name('lantech-cli')
   .description('LanTech Blog CLI - 管理博客内容的命令行工具')
-  .version('1.0.1');
+  .version(pkg.version);
 
 require('../commands/config').register(program);
 require('../commands/permissions').register(program);
