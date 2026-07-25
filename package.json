@@ -1,6 +1,6 @@
 ﻿{
   "name": "lantech-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "LanTech Blog CLI - AI agent 管理博客内容的命令行工具",
   "bin": {
     "lantech-cli": "./bin/cli.js"
