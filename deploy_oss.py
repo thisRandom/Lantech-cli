@@ -8,12 +8,12 @@ from oss2.credentials import StaticCredentialsProvider
 ACCESS_KEY_ID = os.environ.get('OSS_KEY_ID', '')
 ACCESS_KEY_SECRET = os.environ.get('OSS_KEY_SECRET', '')
 
-ENDPOINT = 'oss-cn-beijing.aliyuncs.com'  # 若 lantech-cli bucket 不在北京，改成对应地域
-BUCKET_NAME = 'lantech-cli'  # cli.lantech.top 绑定的 bucket
+ENDPOINT = 'oss-cn-beijing.aliyuncs.com'  # 和图片 bucket 同地域
+BUCKET_NAME = 'lantech'  # 图片/CLI 共用 bucket
 # 要上传的本地包
 LOCAL_FILE = './lantech-cli.tgz'
-# OSS 上的目标对象名（根目录，文件名固定，对应 https://cli.lantech.top/lantech-cli.tgz）
-OSS_KEY = 'lantech-cli.tgz'
+# OSS 上的目标路径（cli/ 目录下，对应 https://cli.lantech.top/lantech-cli.tgz）
+OSS_KEY = 'cli/lantech-cli.tgz'
 
 # 初始化
 auth = oss2.ProviderAuth(StaticCredentialsProvider(ACCESS_KEY_ID, ACCESS_KEY_SECRET))

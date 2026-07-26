@@ -52,12 +52,18 @@ async function uploadFile(filePath, fileType, description, options = {}) {
   form.append('signature', sign.signature);
   form.append('file', fileContent, { filename: 'upload' + ext });
 
-  const axios = require('axios');
-  const uploadRes = await axios.post(sign.host, form, {
-    headers: form.getHeaders(),
-    maxContentLength: 10 * 1024 * 1024,
-    maxBodyLength: 10 * 1024 * 1024,
-  });
+  let uploadRes;
+  try {
+    const axios = require('axios');
+    uploadRes = await axios.post(sign.host, form, {
+      headers: form.getHeaders(),
+      maxContentLength: 10 * 1024 * 1024,
+      maxBodyLength: 10 * 1024 * 1024,
+    });
+  } catch (e) {
+    console.error('错误：上传到 OSS 失败' + (e.response && e.response.status ? '（' + e.response.status + '）' : ''));
+    process.exit(1);
+  }
 
   if (uploadRes.status !== 204 && uploadRes.status !== 200) {
     console.error('错误：上传到 OSS 失败（' + uploadRes.status + '）');
@@ -65,24 +71,32 @@ async function uploadFile(filePath, fileType, description, options = {}) {
   }
 
   const baseUrl = sign.host;
-  await api.post('/api/admin/oss/register', {
+  const registerPayload = {
     url: objectUrl,
     fileName: objectKey.replace(sign.dir, ''),
     fileSize: fileContent.length,
     mimeType: getMimeType(ext),
     description: description || 'CLI 上传',
-  });
+  };
+  try {
+    await api.postRaw('/api/admin/oss/register', registerPayload);
+  } catch (e) {
+    console.error('错误：文件已上传到 OSS，但注册到资源库失败：' + e.message);
+    console.error('文件地址（已存在于 OSS）：' + baseUrl + objectUrl);
+    console.error('可重试注册：lantech-cli oss register --url "' + objectUrl + '" --desc "' + (description || 'CLI 上传') + '"');
+    process.exit(1);
+  }
 
   // 博客前台使用的是自定义 CDN 域名（oss.base_url），非 Aliyun 直链
   // 拿到后可直接用于 project --images / article --cover
   let cdnUrl = null;
   try {
-    const cfgRes = await api.get('/api/admin/config/system');
+    const cfgRes = await api.getRaw('/api/admin/config/system');
     const cfg = cfgRes.data || cfgRes;
     const cdnBase = cfg && cfg['oss.base_url'];
     if (cdnBase) cdnUrl = cdnBase.replace(/\/+$/, '') + objectUrl;
   } catch (e) {
-    // 读不到配置就算了，url 和 fullUrl 仍可用
+    // 读不到配置就算了（密钥可能没有 config:view 权限），url 和 fullUrl 仍可用
   }
 
   return {
@@ -138,6 +152,25 @@ function register(program) {
         quality: quality,
       });
       output.successWithMessage(result, '图片已上传到 OSS');
+    });
+
+  cmd.command('register')
+    .description('补登记已上传到 OSS 但未注册的资源）（用于 upload 注册失败后补救）')
+    .requiredOption('--url <url>', '资源相对路径（如 /blog/articles/xxx.png）')
+    .option('--file-name <name>', '文件名（默认取 url 最后一段）')
+    .option('--file-size <size>', '文件大小（字节）')
+    .option('--mime-type <type>', 'MIME 类型')
+    .option('--desc <desc>', '资源描述', 'CLI 补登记')
+    .action(async (options) => {
+      const data = {
+        url: options.url,
+        fileName: options.fileName || path.basename(options.url),
+        fileSize: options.fileSize ? parseInt(options.fileSize, 10) : null,
+        mimeType: options.mimeType || getMimeType(path.extname(options.url)),
+        description: options.desc || 'CLI 补登记',
+      };
+      await api.post('/api/admin/oss/register', data);
+      output.successWithMessage(null, '资源已登记');
     });
 }
 

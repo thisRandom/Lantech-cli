@@ -33,7 +33,7 @@ function register(program) {
   cmd.command('create')
     .description('创建文章（存为草稿）')
     .requiredOption('--title <title>', '文章标题')
-    .requiredOption('--content <content>', 'Markdown 正文（或用 --content-file 从文件读）')
+    .option('--content <content>', 'Markdown 正文（与 --content-file 二选一）')
     .requiredOption('--category <id>', '分类 ID')
     .option('--content-file <path>', '从文件读取正文（覆盖 --content）')
     .option('--summary <summary>', '文章摘要')
@@ -42,7 +42,17 @@ function register(program) {
     .option('--cover <url>', '封面图 URL')
     .action(async (options) => {
       let content = options.content;
-      if (options.contentFile) content = fs.readFileSync(options.contentFile, 'utf-8').trim();
+      if (options.contentFile) {
+        if (!fs.existsSync(options.contentFile)) {
+          console.error('错误：正文文件不存在 - ' + options.contentFile);
+          process.exit(1);
+        }
+        content = fs.readFileSync(options.contentFile, 'utf-8').trim();
+      }
+      if (!content) {
+        console.error('错误：必须提供 --content 或 --content-file');
+        process.exit(1);
+      }
       const data = {
         title: options.title, content: content,
         categoryId: parseInt(options.category), status: parseInt(options.status),
@@ -69,7 +79,13 @@ function register(program) {
       const res = await api.get(`/api/admin/article/${id}`);
       const cur = res.data || res;
       let content = options.content || cur.content;
-      if (options.contentFile) content = fs.readFileSync(options.contentFile, 'utf-8').trim();
+      if (options.contentFile) {
+        if (!fs.existsSync(options.contentFile)) {
+          console.error('错误：正文文件不存在 - ' + options.contentFile);
+          process.exit(1);
+        }
+        content = fs.readFileSync(options.contentFile, 'utf-8').trim();
+      }
       const data = {
         id: parseInt(id), title: options.title || cur.title, content: content,
         categoryId: options.category ? parseInt(options.category) : cur.categoryId,
